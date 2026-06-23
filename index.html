@@ -44,11 +44,7 @@
   .tab.active { display: block; }
 
   /* ====== TAB 1 — ABOUT ====== */
-  #tab-about {
-    min-height: calc(100vh - 53px);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; padding: 60px 24px;
-  }
+  /* No display rule here — controlled by .tab / .tab.active */
   .about-badge {
     display: inline-block; background: var(--green-dim); border: 1px solid var(--green-mid);
     color: var(--green); font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
@@ -213,6 +209,48 @@
   .lib-card-use-label { font-size: 10px; color: var(--gray); font-weight: 700; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 4px; }
   .lib-card-use-text { font-size: 12px; color: var(--gray-light); line-height: 1.5; }
 
+  /* map toggle */
+  .map-toggle { position:relative; display:inline-block; width:42px; height:24px; flex-shrink:0; cursor:pointer; }
+  .map-toggle input { opacity:0; width:0; height:0; }
+  .map-toggle-slider { position:absolute; inset:0; background:#2a2a2a; border-radius:24px; transition:.25s; border:1px solid var(--border); }
+  .map-toggle-slider::before { content:''; position:absolute; width:18px; height:18px; left:2px; top:2px; background:#555; border-radius:50%; transition:.25s; }
+  .map-toggle input:checked + .map-toggle-slider { background:var(--green-dim); border-color:var(--green); }
+  .map-toggle input:checked + .map-toggle-slider::before { background:var(--green); transform:translateX(18px); }
+
+  /* stall modal */
+  #stall-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:500; align-items:center; justify-content:center; }
+  #stall-modal.open { display:flex; }
+  .modal-box { background:#141414; border:1px solid rgba(224,85,85,0.5); border-radius:16px; padding:32px; max-width:520px; width:90%; box-shadow:0 0 60px rgba(224,85,85,0.15); }
+  .modal-tag { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#e05555; margin-bottom:8px; }
+  .modal-title { font-size:20px; font-weight:800; color:var(--white); margin-bottom:22px; }
+  .modal-section { margin-bottom:16px; }
+  .modal-section-label { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; color:var(--gray); }
+  .modal-section-body { font-size:13px; color:#bbb; line-height:1.65; }
+  .modal-nvidia-box { background:#0d0d0d; border:1px solid var(--green-mid); border-radius:10px; padding:16px; margin-bottom:24px; }
+  .modal-nvidia-label { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--green); margin-bottom:6px; }
+  .modal-nvidia-body { font-size:13px; color:#bbb; line-height:1.65; }
+  .modal-resume { width:100%; background:var(--green); color:#000; font-size:14px; font-weight:700; padding:13px; border:none; border-radius:8px; cursor:pointer; transition:opacity .2s; }
+  .modal-resume:hover { opacity:.85; }
+
+  /* event log */
+  .event-log-panel { max-height: 200px; overflow-y: auto; }
+  .event-log-panel::-webkit-scrollbar { width: 4px; }
+  .event-log-panel::-webkit-scrollbar-track { background: transparent; }
+  .event-log-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .log-empty { font-size: 12px; color: var(--gray); font-style: italic; }
+  .log-entry { display: flex; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .log-entry:last-child { border-bottom: none; }
+  .log-time { font-size: 10px; color: var(--gray); white-space: nowrap; padding-top: 1px; font-family: monospace; }
+  .log-body { font-size: 11px; line-height: 1.5; }
+  .log-title { font-weight: 700; color: #e05555; margin-bottom: 2px; }
+  .log-reason { color: #bbb; }
+
+  /* speed slider */
+  .speed-row { display:flex; align-items:center; gap:10px; margin-top:8px; }
+  .speed-label { font-size:12px; color:var(--gray); white-space:nowrap; }
+  .speed-val { font-size:12px; font-weight:700; color:var(--green); min-width:28px; }
+  #speedSlider { accent-color:var(--green); cursor:pointer; width:110px; }
+
   /* shared utils */
   .section-divider { height: 1px; background: var(--border); margin: 32px 0; }
 </style>
@@ -257,7 +295,14 @@
 <div class="tab" id="tab-sim">
   <div style="padding:24px;max-width:1100px;margin:0 auto;">
     <div class="sim-header">
-      <div class="sim-title">Live Simulation</div>
+      <div>
+        <div class="sim-title">Live Simulation</div>
+        <div class="speed-row">
+          <span class="speed-label">Speed</span>
+          <input type="range" id="speedSlider" min="0.25" max="3" step="0.25" value="1">
+          <span class="speed-val" id="speedVal">1×</span>
+        </div>
+      </div>
       <div class="scenarios">
         <button class="scenario-btn active" data-scenario="campus">College Campus</button>
         <button class="scenario-btn" data-scenario="urban">Dense Urban</button>
@@ -273,8 +318,10 @@
         <div class="canvas-legend">
           <div class="legend-item"><div class="legend-dot" style="background:#888"></div><span style="font-size:11px;color:#aaa">Legacy Bot (Hailo/Ambarella)</span></div>
           <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div><span style="font-size:11px;color:#aaa">NVIDIA Bot (Jetson Orin NX)</span></div>
-          <div class="legend-item"><div class="legend-dot" style="background:#e0b055;border-radius:2px"></div><span style="font-size:11px;color:#aaa">Obstacle</span></div>
-          <div class="legend-item"><div class="legend-dot" style="background:#5596e0;border-radius:2px"></div><span style="font-size:11px;color:#aaa">Destination</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#e0b455"></div><span style="font-size:11px;color:#aaa">Pedestrian</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#5596e0;border-radius:2px"></div><span style="font-size:11px;color:#aaa">Car</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#e06455"></div><span style="font-size:11px;color:#aaa">Crosser</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#5596e0;border-radius:3px;width:18px;height:8px"></div><span style="font-size:11px;color:#aaa">Destination</span></div>
         </div>
         <div class="canvas-controls">
           <button class="ctrl-btn" id="pauseBtn" onclick="togglePause()">⏸ Pause</button>
@@ -338,6 +385,38 @@
           <div style="font-size:11px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Active Scenario</div>
           <div style="font-size:14px;font-weight:700;color:var(--white);margin-bottom:6px" id="s-name">College Campus</div>
           <div style="font-size:12px;color:#bbb;line-height:1.55" id="s-desc">Low obstacle density, clear weather, well-mapped environment. Legacy bot performs adequately but NVIDIA still leads on latency and confidence.</div>
+        </div>
+
+        <!-- New City Map Toggle -->
+        <div class="bot-panel" id="map-toggle-panel" style="display:none">
+          <div style="font-size:11px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">Human Survey Map</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div>
+              <div style="font-size:13px;font-weight:700" id="map-status-label" class="score-val red">Not Available</div>
+              <div style="font-size:11px;color:var(--gray);margin-top:3px" id="map-status-sub">Bot doing live SLAM — unsupported load</div>
+            </div>
+            <label class="map-toggle">
+              <input type="checkbox" id="mapToggle">
+              <span class="map-toggle-slider"></span>
+            </label>
+          </div>
+          <div style="margin-top:10px;font-size:11px;color:#bbb;line-height:1.6" id="map-toggle-note">
+            Legacy cannot self-map. A human survey team must drive every street in advance — typically 4–8 weeks per city.
+          </div>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:#666;line-height:1.6">
+            NVIDIA is unaffected — Isaac Sim maps new cities digitally in days. No survey vehicles needed.
+          </div>
+        </div>
+
+        <!-- Event Log -->
+        <div class="bot-panel">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:11px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.8px">Error Log</div>
+            <button onclick="clearLog()" style="font-size:10px;color:var(--gray);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;border:1px solid var(--border)">Clear</button>
+          </div>
+          <div class="event-log-panel" id="event-log">
+            <div class="log-empty" id="log-empty">No errors yet — simulation running normally.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -561,6 +640,23 @@
   </div>
 </div>
 
+<!-- Stall Modal -->
+<div id="stall-modal">
+  <div class="modal-box">
+    <div class="modal-tag">⚠ Compute Stall Detected</div>
+    <div class="modal-title">Legacy Bot Froze</div>
+    <div class="modal-section">
+      <div class="modal-section-label">What Happened</div>
+      <div class="modal-section-body" id="modal-what"></div>
+    </div>
+    <div class="modal-nvidia-box">
+      <div class="modal-nvidia-label">How NVIDIA Avoids This</div>
+      <div class="modal-nvidia-body" id="modal-nvidia"></div>
+    </div>
+    <button class="modal-resume" onclick="dismissStallModal()">Resume Simulation →</button>
+  </div>
+</div>
+
 <script>
 // ====== NAV ======
 function switchTab(name) {
@@ -576,24 +672,27 @@ const ctx = canvas.getContext('2d');
 const W = 700, H = 480;
 
 const SCENARIOS = {
-  campus:  { name:'College Campus',   desc:'Low obstacle density, clear weather, well-mapped environment. Legacy bot performs adequately but NVIDIA still leads on latency and confidence.', obstacles:5,  legLoad:55, nvLoad:38, legLat:18, nvLat:4, legConf:72, nvConf:95, stallThresh:0.04, batDrain:{leg:0.012,nv:0.008} },
-  urban:   { name:'Dense Urban',      desc:'High pedestrian density, complex intersections, dynamic obstacles. Legacy compute saturation causes frequent stalls and route errors.', obstacles:14, legLoad:91, nvLoad:62, legLat:68, nvLat:6, legConf:41, nvConf:91, stallThresh:0.12, batDrain:{leg:0.022,nv:0.011} },
-  weather: { name:'Bad Weather',      desc:'Rain/snow reduces camera confidence, requiring heavier sensor fusion. Legacy stack has no multi-modal fusion; compute load spikes unrecoverably.', obstacles:9,  legLoad:98, nvLoad:58, legLat:95, nvLat:7, legConf:28, nvConf:88, stallThresh:0.18, batDrain:{leg:0.028,nv:0.012} },
-  newcity: { name:'New City Launch',  desc:'Unmapped environment, no prior HD map, robot must build local map in real-time. Legacy system cannot run SLAM and inference simultaneously.', obstacles:11, legLoad:99, nvLoad:70, legLat:120, nvLat:9, legConf:18, nvConf:84, stallThresh:0.22, batDrain:{leg:0.032,nv:0.014} }
+  campus:  { name:'College Campus',   desc:'Low obstacle density, clear weather, well-mapped environment. Legacy bot performs adequately but NVIDIA still leads on latency and confidence.', obstacles:13, obsTypes:['ped','ped','ped','ped','ped','ped','ped','car','car','cross','cross','cross','cross'], legLoad:55, nvLoad:38, legLat:18, nvLat:4, legConf:72, nvConf:95, stallThresh:0.04, batDrain:{leg:0.012,nv:0.008}, obsSpeed:0.6 },
+  urban:   { name:'Dense Urban',      desc:'High pedestrian density, complex intersections, dynamic obstacles. Legacy compute saturation causes frequent stalls and route errors.', obstacles:24, obsTypes:['ped','ped','ped','ped','ped','ped','ped','ped','ped','car','car','car','car','cross','cross','cross','cross','cross','cross'], legLoad:91, nvLoad:62, legLat:68, nvLat:6, legConf:41, nvConf:91, stallThresh:0.12, batDrain:{leg:0.022,nv:0.011}, obsSpeed:1.4 },
+  weather: { name:'Bad Weather',      desc:'Rain/snow reduces camera confidence, requiring heavier sensor fusion. Legacy stack has no multi-modal fusion; compute load spikes unrecoverably.', obstacles:17, obsTypes:['ped','ped','ped','ped','ped','ped','car','car','car','cross','cross','cross','cross','cross'], legLoad:98, nvLoad:58, legLat:95, nvLat:7, legConf:28, nvConf:88, stallThresh:0.18, batDrain:{leg:0.028,nv:0.012}, obsSpeed:1.0 },
+  newcity: { name:'New City Launch',  desc:'Unmapped environment, no prior HD map, robot must build local map in real-time. Legacy system cannot run SLAM and inference simultaneously.', obstacles:19, obsTypes:['ped','ped','ped','ped','ped','car','car','car','car','cross','cross','cross','cross','cross'], legLoad:99, nvLoad:70, legLat:120, nvLat:9, legConf:18, nvConf:84, stallThresh:0.22, batDrain:{leg:0.032,nv:0.014}, obsSpeed:1.2 }
 };
 
 let scenario = 'campus';
 let paused = false;
 let animId = null;
+let simSpeed = 1.0;
+let cityMapped = false;
 
 let state = {};
 
 function initState() {
   const sc = SCENARIOS[scenario];
   state = {
-    leg: { x: 120, y: H/2, vx: 0, vy: 0, bat: 100, stalled: false, stallTimer: 0, stallCount: 0, deliveries: 0, arrived: false, trail: [] },
-    nv:  { x: 120, y: H/2 + 60, vx: 0, vy: 0, bat: 100, stalled: false, stallTimer: 0, stallCount: 0, deliveries: 0, arrived: false, trail: [] },
-    dest: { x: W - 80, y: H/2 + 30 },
+    leg: { x: 100, y: PATH1, vx: 0, vy: 0, bat: 100, stalled: false, stallTimer: 0, stallCount: 0, deliveries: 0, arrived: false, trail: [] },
+    nv:  { x: 100, y: PATH2, vx: 0, vy: 0, bat: 100, stalled: false, stallTimer: 0, stallCount: 0, deliveries: 0, arrived: false, trail: [] },
+    destLeg: { x: W - 80, y: PATH1 },
+    destNv:  { x: W - 80, y: PATH2 },
     obstacles: generateObstacles(sc.obstacles),
     tick: 0,
     legLoad: 0,
@@ -601,17 +700,59 @@ function initState() {
   };
 }
 
+const PATH1 = 160, PATH2 = 320, PATHGAP = 160;
+
 function generateObstacles(n) {
+  const sc = SCENARIOS[scenario];
+  const baseSpeed = sc.obsSpeed;
+  const types = sc.obsTypes;
   const obs = [];
   for (let i = 0; i < n; i++) {
-    obs.push({
-      x: 200 + Math.random() * (W - 320),
-      y: 60 + Math.random() * (H - 120),
-      w: 20 + Math.random() * 30,
-      h: 16 + Math.random() * 24,
-    });
+    const type = types[i % types.length];
+    const spd = (0.5 + Math.random() * 0.6) * baseSpeed;
+    let x, y, vx, vy, w, h;
+    if (type === 'ped') {
+      w = 12; h = 12;
+      x = 140 + Math.random() * (W - 260);
+      y = PATH1 - 6 + (Math.random() - 0.5) * 16;
+      vx = (Math.random() < 0.5 ? 1 : -1) * spd;
+      vy = (Math.random() - 0.5) * 0.15;
+    } else if (type === 'car') {
+      w = 40; h = 18;
+      x = 140 + Math.random() * (W - 320);
+      y = PATH1 - 9 + (Math.random() - 0.5) * 10;
+      vx = (Math.random() < 0.5 ? 1 : -1) * spd * 1.6;
+      vy = 0;
+    } else {
+      w = 12; h = 12;
+      x = 140 + Math.random() * (W - 260);
+      const fromTop = Math.random() < 0.5;
+      y = fromTop ? -h : H + h;
+      vx = (Math.random() - 0.5) * 0.2;
+      vy = (fromTop ? 1 : -1) * spd * 0.9;
+    }
+    obs.push({ type, x, y, w, h, vx, vy });
   }
   return obs;
+}
+
+function moveObstacles() {
+  const m = simSpeed;
+  for (const o of state.obstacles) {
+    o.x += o.vx * m;
+    o.y += o.vy * m;
+    if (o.type === 'cross') {
+      // wrap so both path copies stay in cycle
+      if (o.vy > 0 && o.y > H + o.h) o.y = -o.h;
+      if (o.vy < 0 && o.y + PATHGAP < -o.h) o.y = H + o.h - PATHGAP;
+      if (o.x < 80 || o.x + o.w > W - 80) { o.vx *= -1; o.x = Math.max(80, Math.min(W - 80 - o.w, o.x)); }
+    } else {
+      if (o.x < 70 || o.x + o.w > W - 70) { o.vx *= -1; o.x = Math.max(70, Math.min(W - 70 - o.w, o.x)); }
+      const target = PATH1 - o.h / 2;
+      if (Math.abs(o.y - target) > 22) o.vy += (target - o.y) * 0.008;
+      o.vy *= 0.92;
+    }
+  }
 }
 
 function resetSim() {
@@ -634,43 +775,94 @@ document.querySelectorAll('.scenario-btn').forEach(btn => {
     document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     scenario = btn.dataset.scenario;
+    cityMapped = false;
+    document.getElementById('mapToggle').checked = false;
+    document.getElementById('map-status-label').textContent = 'Unmapped';
+    document.getElementById('map-status-label').className = 'score-val red';
+    document.getElementById('map-status-sub').textContent = 'Running SLAM in real-time';
+    document.getElementById('map-toggle-panel').style.display = scenario === 'newcity' ? 'block' : 'none';
     resetSim();
   });
 });
 
-function updateScenarioInfo() {
+document.getElementById('mapToggle').addEventListener('change', e => toggleCityMap(e.target.checked));
+
+function getActiveParams() {
   const sc = SCENARIOS[scenario];
+  if (scenario !== 'newcity' || !cityMapped) return sc;
+  return { ...sc,
+    legLoad: 65, legLat: 45, legConf: 58, stallThresh: 0.06,
+    desc: 'Human survey team manually mapped this city over 6 weeks. SLAM disabled — Legacy compute drops to ~65%, fewer stalls. But the map will drift, and any new construction or road change requires another survey run. NVIDIA uses Isaac Sim to map digitally in days.',
+  };
+}
+
+function updateScenarioInfo() {
+  const sc = getActiveParams();
   document.getElementById('s-name').textContent = sc.name;
   document.getElementById('s-desc').textContent = sc.desc;
 }
 
+function toggleCityMap(checked) {
+  cityMapped = checked;
+  const label = document.getElementById('map-status-label');
+  label.textContent = checked ? 'Uploaded' : 'Not Available';
+  label.className = 'score-val ' + (checked ? 'green' : 'red');
+  document.getElementById('map-status-sub').textContent = checked ? 'Survey map loaded, SLAM disabled' : 'Bot doing live SLAM — unsupported load';
+  document.getElementById('map-toggle-note').textContent = checked
+    ? 'Survey team spent 6 weeks driving every street. HD map uploaded manually. Still no sim environment — map will drift over time.'
+    : 'Legacy cannot self-map. A human survey team must drive every street in advance — typically 4–8 weeks per city.';
+  updateScenarioInfo();
+  state.legLoad = 0;
+  state.nvLoad = 0;
+}
+
 function moveBot(bot, isLegacy) {
-  const sc = SCENARIOS[scenario];
-  const stalled = isLegacy && bot.stalled;
-  if (stalled) return;
+  if (isLegacy && bot.stalled) return;
   if (bot.arrived) return;
 
-  const dx = state.dest.x - bot.x;
-  const dy = state.dest.y - bot.y;
-  const dist = Math.sqrt(dx*dx + dy*dy);
-  if (dist < 18) { bot.arrived = true; bot.deliveries++; setTimeout(() => { bot.arrived = false; bot.x = 120; bot.y = isLegacy ? H/2 : H/2+60; bot.trail = []; }, 1000); return; }
+  const dest = isLegacy ? state.destLeg : state.destNv;
+  const pathOffset = isLegacy ? 0 : PATHGAP;
 
-  const speed = isLegacy ? 1.2 : 1.9;
+  const dx = dest.x - bot.x;
+  const dy = dest.y - bot.y;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  if (dist < 18) {
+    bot.arrived = true; bot.deliveries++;
+    setTimeout(() => { bot.arrived = false; bot.x = 100; bot.y = isLegacy ? PATH1 : PATH2; bot.trail = []; }, 1000);
+    return;
+  }
+
+  const speed = 1.5 * simSpeed;
   let nx = bot.x + (dx/dist) * speed;
   let ny = bot.y + (dy/dist) * speed;
 
-  // obstacle avoidance
+  // Detection radius scales inversely with latency.
+  // NVIDIA detects early → gentle arc with time to plan.
+  // Legacy detects late → sharp last-second lurch.
+  const sc = getActiveParams();
+  const detect = isLegacy
+    ? Math.max(10, 22 - sc.legLat * 0.09)  // 18ms→20px  68ms→16px  95ms→13px  120ms→11px
+    : Math.max(28, 36 - sc.nvLat);          //  4ms→32px   6ms→30px   7ms→29px    9ms→28px
+  const pushForce = isLegacy ? 2.6 : 0.85; // Legacy lurches; NVIDIA barely deflects
+
   for (const o of state.obstacles) {
-    const cx = o.x + o.w/2, cy = o.y + o.h/2;
-    const bx = nx, by = ny;
-    if (bx > o.x-12 && bx < o.x+o.w+12 && by > o.y-12 && by < o.y+o.h+12) {
-      const pushX = bx - cx, pushY = by - cy;
-      const mag = Math.sqrt(pushX*pushX + pushY*pushY) || 1;
-      const force = isLegacy ? 1.5 : 2.5;
-      nx += (pushX/mag)*force;
-      ny += (pushY/mag)*force;
+    const oy = o.y + pathOffset;
+    const cx = o.x + o.w/2, cy = oy + o.h/2;
+    const ddx = nx - cx, ddy = ny - cy;
+    const d = Math.sqrt(ddx*ddx + ddy*ddy);
+    if (d < detect + Math.max(o.w, o.h) / 2) {
+      // Only push laterally (Y) — bots go around obstacles, never backward
+      const lat = ddy / (Math.abs(ddy) || 1) * pushForce;
+      ny += lat;
     }
   }
+
+  // Pull bot back toward its path — keeps both on track without overriding avoidance
+  const pathY = isLegacy ? PATH1 : PATH2;
+  ny += (pathY - ny) * (isLegacy ? 0.07 : 0.10);
+
+  // Store current detect radius so drawScene can visualize it
+  if (isLegacy) state.legDetect = detect; else state.nvDetect = detect;
 
   nx = Math.max(20, Math.min(W-20, nx));
   ny = Math.max(20, Math.min(H-20, ny));
@@ -681,7 +873,7 @@ function moveBot(bot, isLegacy) {
 }
 
 function updateMetrics() {
-  const sc = SCENARIOS[scenario];
+  const sc = getActiveParams();
   const t = state.tick;
 
   // load ramps up
@@ -692,12 +884,17 @@ function updateMetrics() {
   state.leg.bat = Math.max(0, state.leg.bat - sc.batDrain.leg * (state.legLoad/100));
   state.nv.bat  = Math.max(0, state.nv.bat  - sc.batDrain.nv  * (state.nvLoad/100));
 
-  // stall logic for legacy
-  if (!state.leg.stalled && state.legLoad >= 85) {
+  // stall logic for legacy — only check every 60 ticks (~1s) to avoid per-frame over-triggering
+  if (!state.leg.stalled && state.legLoad >= 85 && state.tick % 60 === 0) {
     if (Math.random() < sc.stallThresh) {
       state.leg.stalled = true;
-      state.leg.stallTimer = 80 + Math.random() * 80;
+      state.leg.stallTimer = 120 + Math.random() * 120;
       state.leg.stallCount++;
+      const reasons = (scenario === 'newcity' && cityMapped) ? STALL_REASONS_MAPPED.newcity : STALL_REASONS[scenario];
+      const responses = (scenario === 'newcity' && cityMapped) ? NVIDIA_RESPONSES_MAPPED.newcity : NVIDIA_RESPONSES[scenario];
+      const idx = state.leg.stallCount % reasons.length;
+      logEvent(reasons[idx]);
+      showStallModal(reasons[idx], responses[idx % responses.length]);
     }
   }
   if (state.leg.stalled) {
@@ -747,36 +944,67 @@ function drawScene() {
   for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
   for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
-  // sidewalk paths
+  // two parallel sidewalk paths
   ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-  ctx.lineWidth = 28;
+  ctx.lineWidth = 40;
   ctx.setLineDash([]);
-  ctx.beginPath(); ctx.moveTo(60, H/2); ctx.lineTo(W-60, H/2); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(60, H/2+60); ctx.lineTo(W-60, H/2+60); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(60, PATH1); ctx.lineTo(W-60, PATH1); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(60, PATH2); ctx.lineTo(W-60, PATH2); ctx.stroke();
   ctx.lineWidth = 1;
 
-  // obstacles
+  // path labels
+  ctx.font = 'bold 10px system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(136,136,136,0.5)';
+  ctx.fillText('LEGACY', 65, PATH1 - 26);
+  ctx.fillStyle = 'rgba(29,158,117,0.5)';
+  ctx.fillText('NVIDIA', 65, PATH2 - 26);
+
+  // obstacles — drawn at PATH1 (o.y) and PATH2 (o.y + PATHGAP) copy
   const sc = SCENARIOS[scenario];
-  const obsColor = scenario === 'weather' ? 'rgba(100,140,200,0.35)' : 'rgba(224,176,85,0.35)';
-  const obsBorder = scenario === 'weather' ? 'rgba(100,140,200,0.7)' : 'rgba(224,176,85,0.7)';
-  for (const o of state.obstacles) {
-    ctx.fillStyle = obsColor;
-    ctx.strokeStyle = obsBorder;
+  const isWeather = scenario === 'weather';
+  function drawObs(o, drawY, pathCenter) {
+    if (o.type === 'cross' && Math.abs((drawY + o.h / 2) - pathCenter) > 38) return;
     ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.roundRect(o.x, o.y, o.w, o.h, 3);
-    ctx.fill(); ctx.stroke();
+    if (o.type === 'car') {
+      ctx.fillStyle = 'rgba(85,140,220,0.3)';
+      ctx.strokeStyle = '#5596e0';
+      ctx.beginPath(); ctx.roundRect(o.x, drawY, o.w, o.h, 4); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(85,150,224,0.9)';
+      ctx.font = 'bold 7px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('CAR', o.x + o.w/2, drawY + o.h/2);
+    } else {
+      const cx = o.x + o.w/2, cy = drawY + o.h/2, r = o.w/2;
+      if (o.type === 'cross') {
+        ctx.fillStyle = isWeather ? 'rgba(180,110,90,0.85)' : 'rgba(224,90,80,0.85)';
+        ctx.strokeStyle = isWeather ? '#c06050' : '#e06455';
+      } else {
+        ctx.fillStyle = isWeather ? 'rgba(160,150,100,0.85)' : 'rgba(224,180,80,0.85)';
+        ctx.strokeStyle = isWeather ? '#a09060' : '#e0b455';
+      }
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 7px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(o.type === 'cross' ? '↕' : 'P', cx, cy);
+    }
+  }
+  for (const o of state.obstacles) {
+    drawObs(o, o.y, PATH1);              // legacy path copy
+    drawObs(o, o.y + PATHGAP, PATH2);   // nvidia path copy
   }
 
-  // destination
-  ctx.fillStyle = 'rgba(85,150,224,0.2)';
-  ctx.strokeStyle = '#5596e0';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(state.dest.x, state.dest.y, 20, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#5596e0';
-  ctx.font = 'bold 13px system-ui';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('📦', state.dest.x, state.dest.y);
+  // destinations — one per path
+  function drawDest(dest) {
+    ctx.fillStyle = 'rgba(85,150,224,0.2)';
+    ctx.strokeStyle = '#5596e0';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(dest.x, dest.y, 18, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#5596e0';
+    ctx.font = '13px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('📦', dest.x, dest.y);
+  }
+  drawDest(state.destLeg);
+  drawDest(state.destNv);
 
   // draw trails
   function drawTrail(bot, color) {
@@ -794,41 +1022,57 @@ function drawScene() {
   drawTrail(state.nv,  'rgba(29,158,117,0.3)');
 
   // draw bots
-  function drawBot(bot, color, label, stalled) {
+  const sc2 = getActiveParams();
+  const legLat = state.leg.stalled ? '∞' : (sc2.legLat + Math.round(Math.random()*4)) + 'ms';
+  const nvLat  = (sc2.nvLat  + Math.round(Math.random()*2)) + 'ms';
+
+  function drawBot(bot, color, label, stalled, detectR, latLabel) {
     const r = 14;
+
+    // detection aura — shows how far ahead the bot reacts
+    ctx.beginPath(); ctx.arc(bot.x, bot.y, detectR, 0, Math.PI*2);
+    ctx.strokeStyle = stalled ? 'rgba(224,85,85,0.25)' : color.replace(')', ',0.18)').replace('rgb','rgba') || 'rgba(136,136,136,0.18)';
+    ctx.lineWidth = 1; ctx.setLineDash([3,5]); ctx.stroke(); ctx.setLineDash([]);
+
     // glow
-    const grd = ctx.createRadialGradient(bot.x, bot.y, 0, bot.x, bot.y, r*2.5);
-    grd.addColorStop(0, color.replace(')', ',0.18)').replace('rgb','rgba'));
+    const grd = ctx.createRadialGradient(bot.x, bot.y, 0, bot.x, bot.y, r*2);
+    grd.addColorStop(0, color.replace(')', ',0.15)').replace('rgb','rgba'));
     grd.addColorStop(1, 'transparent');
     ctx.fillStyle = grd;
-    ctx.beginPath(); ctx.arc(bot.x, bot.y, r*2.5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bot.x, bot.y, r*2, 0, Math.PI*2); ctx.fill();
 
     // body
     ctx.fillStyle = stalled ? '#333' : color;
-    ctx.strokeStyle = stalled ? '#666' : color;
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(bot.x, bot.y, r, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle = '#0d0d0d'; ctx.lineWidth = 2;
-    ctx.stroke();
+    ctx.strokeStyle = '#0d0d0d'; ctx.stroke();
 
-    // stall indicator
+    // stall ring
     if (stalled) {
-      ctx.strokeStyle = '#e05555';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#e05555'; ctx.lineWidth = 2;
       ctx.setLineDash([3,3]);
       ctx.beginPath(); ctx.arc(bot.x, bot.y, r+6, 0, Math.PI*2); ctx.stroke();
       ctx.setLineDash([]);
     }
 
-    // label
-    ctx.fillStyle = stalled ? '#666' : '#fff';
-    ctx.font = 'bold 9px system-ui';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    // bot label
+    ctx.fillStyle = stalled ? '#555' : '#fff';
+    ctx.font = 'bold 9px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(label, bot.x, bot.y);
+
+    // latency badge above bot
+    const badgeW = 34, badgeH = 14, bx = bot.x - badgeW/2, by = bot.y - r - 20;
+    ctx.fillStyle = stalled ? 'rgba(224,85,85,0.2)' : (label === 'NV' ? 'rgba(29,158,117,0.2)' : 'rgba(80,80,80,0.35)');
+    ctx.strokeStyle = stalled ? '#e05555' : (label === 'NV' ? '#1D9E75' : '#555');
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(bx, by, badgeW, badgeH, 3); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = stalled ? '#e05555' : (label === 'NV' ? '#1D9E75' : '#aaa');
+    ctx.font = 'bold 8px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(latLabel, bot.x, by + badgeH/2);
   }
 
-  drawBot(state.leg, '#888', 'LEG', state.leg.stalled);
-  drawBot(state.nv,  '#1D9E75', 'NV', false);
+  drawBot(state.leg, '#888',     'LEG', state.leg.stalled, state.legDetect || 14, legLat);
+  drawBot(state.nv,  '#1D9E75', 'NV',  false,              state.nvDetect  || 30, nvLat);
 
   // scenario overlay label
   ctx.fillStyle = 'rgba(29,158,117,0.7)';
@@ -840,6 +1084,7 @@ function drawScene() {
 function loop() {
   if (paused) return;
   state.tick++;
+  moveObstacles();
   moveBot(state.leg, true);
   moveBot(state.nv, false);
   if (state.tick % 3 === 0) updateMetrics();
@@ -847,15 +1092,124 @@ function loop() {
   animId = requestAnimationFrame(loop);
 }
 
-let simInited = false;
-function initSim() {
-  if (simInited) return;
-  simInited = true;
-  resetSim();
+document.getElementById('speedSlider').addEventListener('input', e => {
+  simSpeed = parseFloat(e.target.value);
+  document.getElementById('speedVal').textContent = simSpeed + '×';
+});
+
+const NVIDIA_RESPONSES = {
+  campus: [
+    'Jetson Orin NX tracks 15+ objects simultaneously using dedicated DLA cores — pedestrian clusters never overflow the tracking queue.',
+    'With 100 TOPS split across GPU, DLA, and vision engines, depth estimation and object detection run in parallel on separate hardware. No pipeline serialization.',
+    'TensorRT-optimized models re-infer in 4ms. Low-confidence detections trigger a secondary DLA pass without stalling the primary pipeline.',
+  ],
+  urban: [
+    'DriveWorks SDK manages multi-object tracking with GPU tensor cores. 20+ simultaneous tracks handled without dropping frames.',
+    'Isaac Lab pre-trained on 50,000+ intersection scenarios. Full-scene re-inference takes 6ms via TensorRT — not 95ms.',
+    'Orin separates pedestrian detection (DLA), path planning (GPU), and motor control (CPU). All three run concurrently — no shared bottleneck.',
+    'Jetson Orin NX thermal design handles sustained 100% outdoor load. No throttle, no freeze.',
+  ],
+  weather: [
+    'NVIDIA Cosmos world model was trained on rain and adverse conditions. False positive rate drops 80% — no redundant inference passes triggered.',
+    'DriveWorks SDK fuses camera, ultrasonic, and radar in hardware. Multi-modal fusion runs full-time — there is no stereo-only fallback.',
+    'Isaac Lab trained on millions of wet surface and reflection scenarios. Correct classification on first pass, no re-plan loop.',
+    'With 9 cameras and ultrasonic fusion, single-lens occlusion from snow does not degrade system confidence below action threshold.',
+  ],
+  newcity: [
+    'Jetson Orin NX runs localization on ARM cores while GPU handles detection independently. Isaac Sim pre-mapped the city — SLAM is a fallback, not the primary path.',
+    'NVIDIA Cosmos generates a world-model estimate from satellite and street imagery before deployment. An HD map is available day one — no live SLAM needed.',
+    'Isaac Lab training included 50,000+ road marking variants including unknown types. Unrecognized markings trigger a known fallback path, not a freeze.',
+    'Isaac Sim ran the full city layout in simulation before any robot shipped. Visual localization matches against that prior — zero real-time map building required.',
+  ],
+};
+
+const NVIDIA_RESPONSES_MAPPED = {
+  newcity: [
+    'NVIDIA Cosmos detects construction zones via world-model inference and flags the map segment for re-synthesis. OTA update pushed within hours.',
+    'Jetson Orin NX runs visual odometry at 60Hz. Map drift is detected and corrected before it exceeds tolerance — no stall, just a silent recalibration.',
+    'Isaac Lab training covers dynamic storefront and signage changes. Known obstacle types are handled by detection, independent of map data.',
+    'Cosmos continuously synthesizes updated world-model priors from fleet telemetry. The effective map is never more than 24 hours stale.',
+  ],
+};
+
+const STALL_REASONS_MAPPED = {
+  newcity: [
+    'Stale HD map data: construction zone not in map — bot ran unplanned re-localization, spiking compute.',
+    'Map drift detected after 300m — Hailo-8 ran concurrent re-localization and inference, briefly saturating 26 TOPS.',
+    'New storefront obstructed mapped path — unrecognized obstacle triggered re-classification outside map data.',
+    'Map timestamp 6 months old — seasonal changes caused confidence mismatch, forcing partial re-inference.',
+  ],
+};
+
+const STALL_REASONS = {
+  campus:  [
+    'Pedestrian cluster exceeded Hailo-8 object tracking limit (8 simultaneous objects).',
+    'Vision pipeline serialized — stereo depth and object detection cannot run in parallel at 26 TOPS.',
+    'Unexpected cyclist caused confidence drop below threshold; bot halted pending re-inference.',
+  ],
+  urban:   [
+    'Multi-object tracking queue overflowed — Hailo-8 dropped frames under 14+ simultaneous detections.',
+    'Intersection scan required full-scene re-inference; single-core bottleneck caused 95ms freeze.',
+    'Compute budget exhausted balancing pedestrian detection and path re-planning simultaneously.',
+    'CV3 SoC thermal throttle triggered under sustained 91% load — inference paused for 140ms.',
+  ],
+  weather: [
+    'Rain artifacts injected false positives; legacy stack ran redundant inference passes until chip saturated.',
+    'Camera confidence dropped to 28% — fallback to stereo-only mode tripled compute demand on Hailo-8.',
+    'Wet surface reflection misclassified as obstacle — re-planning loop locked the inference pipeline.',
+    'Snow occlusion on lens triggered repeated depth recalculation, exhausting available TOPS budget.',
+  ],
+  newcity: [
+    'Simultaneous SLAM map-building + object detection exceeded Hailo-8 capacity — one task preempted.',
+    'No prior HD map available — bot attempted full-scene reconstruction, saturating all 26 TOPS.',
+    'Unknown road marking triggered fallback inference path not optimized for Hailo fixed-function engine.',
+    'Real-time localization without pre-mapped environment requires 4× more compute than Hailo-8 supports.',
+  ],
+};
+
+function logEvent(reason) {
+  const log = document.getElementById('event-log');
+  const empty = document.getElementById('log-empty');
+  if (empty) empty.remove();
+  const elapsed = Math.floor((state.tick || 0) / 60);
+  const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const ss = String(elapsed % 60).padStart(2, '0');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `
+    <div class="log-time">${mm}:${ss}</div>
+    <div class="log-body">
+      <div class="log-title">⚠ COMPUTE STALL — Legacy Bot</div>
+      <div class="log-reason">${reason}</div>
+    </div>`;
+  log.prepend(entry);
 }
 
-// init sim if starting on that tab
-if (document.getElementById('tab-sim').classList.contains('active')) initSim();
+function clearLog() {
+  const log = document.getElementById('event-log');
+  log.innerHTML = '<div class="log-empty" id="log-empty">No errors yet — simulation running normally.</div>';
+}
+
+function showStallModal(reason, nvResponse) {
+  paused = true;
+  document.getElementById('pauseBtn').textContent = '▶ Play';
+  document.getElementById('modal-what').textContent = reason;
+  document.getElementById('modal-nvidia').textContent = nvResponse;
+  document.getElementById('stall-modal').classList.add('open');
+}
+
+function dismissStallModal() {
+  document.getElementById('stall-modal').classList.remove('open');
+  paused = false;
+  document.getElementById('pauseBtn').textContent = '⏸ Pause';
+  loop();
+}
+
+let simStarted = false;
+function initSim() {
+  if (!simStarted) { simStarted = true; resetSim(); }
+  else if (!paused && !animId) loop();
+}
 </script>
 </body>
 </html>
