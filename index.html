@@ -253,6 +253,86 @@
 
   /* shared utils */
   .section-divider { height: 1px; background: var(--border); margin: 32px 0; }
+
+  /* ====== WALKTHROUGH (About tab) ====== */
+  .walkthrough {
+    min-height: calc(100vh - 53px);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 48px 24px 32px;
+  }
+  .step-card { width: 100%; max-width: 780px; animation: stepIn .3s ease; }
+  @keyframes stepIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .step-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--green); margin-bottom: 10px;
+  }
+  .step-title {
+    font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; line-height: 1.1;
+    margin-bottom: 20px;
+  }
+  .step-title span { color: var(--green); }
+  .step-body { font-size: 16px; line-height: 1.8; color: #ccc; max-width: 680px; }
+  .step-body strong { color: var(--white); }
+  .step-stat-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 36px; }
+
+  /* chip compare */
+  .step-chip-compare { display:flex; align-items:center; gap:20px; margin-top:32px; flex-wrap:wrap; }
+  .chip-box {
+    flex:1; min-width:180px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:14px; padding:22px 24px; text-align:center;
+  }
+  .chip-box.nvidia-chip { border-color:var(--green-mid); background:rgba(29,158,117,.06); }
+  .chip-name { font-size:13px; font-weight:700; color:var(--gray-light); margin-bottom:6px; text-transform:uppercase; letter-spacing:.8px; }
+  .chip-tops { font-size:32px; font-weight:800; color:var(--white); margin-bottom:6px; }
+  .chip-box.nvidia-chip .chip-tops { color:var(--green); }
+  .chip-note { font-size:12px; color:var(--gray); line-height:1.55; }
+  .chip-arrow { font-size:28px; color:var(--green); flex-shrink:0; }
+
+  /* where it breaks grid */
+  .step-break-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:28px; }
+  @media(max-width:600px) { .step-break-grid { grid-template-columns:1fr; } }
+  .break-card {
+    background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:18px 20px;
+  }
+  .break-icon { font-size:22px; margin-bottom:8px; }
+  .break-title { font-size:14px; font-weight:700; color:var(--white); margin-bottom:6px; }
+  .break-body { font-size:13px; color:#bbb; line-height:1.6; }
+
+  /* nvidia solves */
+  .step-solve-grid { display:flex; flex-direction:column; gap:14px; margin-top:28px; }
+  .solve-item { display:flex; gap:14px; align-items:flex-start; }
+  .solve-dot { width:8px; height:8px; border-radius:50%; background:var(--green); flex-shrink:0; margin-top:6px; }
+  .solve-title { font-size:15px; font-weight:700; color:var(--white); margin-bottom:4px; }
+  .solve-body { font-size:13px; color:#bbb; line-height:1.6; }
+
+  /* step nav bar */
+  .step-nav-bar {
+    display:flex; align-items:center; justify-content:space-between;
+    width:100%; max-width:780px; margin-top:40px; padding-top:20px;
+    border-top:1px solid var(--border);
+  }
+  .step-btn {
+    background:transparent; border:1px solid var(--border); color:var(--gray-light);
+    font-size:13px; font-weight:600; padding:10px 22px; border-radius:8px;
+    cursor:pointer; transition:all .2s;
+  }
+  .step-btn:hover { border-color:var(--green); color:var(--green); }
+  .step-btn:disabled { opacity:.3; cursor:default; }
+  .step-dots { display:flex; gap:8px; align-items:center; }
+  .step-dot {
+    width:8px; height:8px; border-radius:50%; background:var(--border);
+    cursor:pointer; transition:background .2s, transform .2s;
+  }
+  .step-dot.active { background:var(--green); transform:scale(1.3); }
+
+  /* sim disclaimer */
+  .sim-disclaimer {
+    margin-top:16px; padding:14px 18px; background:var(--bg3);
+    border:1px solid var(--border); border-radius:10px;
+    font-size:12px; color:var(--gray); line-height:1.65;
+  }
+  .sim-disclaimer strong { color:var(--gray-light); }
 </style>
 </head>
 <body>
@@ -261,33 +341,160 @@
   <div class="nav-brand">ADIP</div>
   <div class="nav-tabs">
     <div class="nav-tab active" data-tab="about">About</div>
-    <div class="nav-tab" data-tab="sim">Live Simulation</div>
     <div class="nav-tab" data-tab="compare">Stack Comparison</div>
     <div class="nav-tab" data-tab="library">Library Reference</div>
+    <div class="nav-tab" data-tab="sim">Live Simulation</div>
   </div>
 </nav>
 
-<!-- ====== TAB 1: ABOUT ====== -->
+<!-- ====== TAB 1: ABOUT (Walkthrough) ====== -->
 <div class="tab active" id="tab-about">
-  <div style="min-height:calc(100vh - 53px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px 24px;">
-    <div class="about-badge">Research Tool</div>
-    <h1 class="about-title">Autonomous Delivery<br><span>Intelligence Platform</span></h1>
-    <p class="about-author">By Dean Guardanapo</p>
-    <p class="about-desc">
-      This tool explores how <strong>NVIDIA's robotics stack</strong> solves real compute limitations
-      facing autonomous sidewalk delivery companies like <strong>Starship Technologies</strong>.
-      By simulating the gap between legacy chips and NVIDIA's Jetson Orin NX, it makes clear
-      why raw TOPS, sensor fusion, and closed-loop simulation environments are mission-critical —
-      not optional upgrades. Every scenario in this platform is grounded in real-world deployment
-      constraints that current fleets hit daily.
-    </p>
-    <button class="btn-launch" onclick="switchTab('sim')">Launch Simulation →</button>
-    <div class="about-grid">
-      <div class="about-stat"><div class="about-stat-val">4×</div><div class="about-stat-label">More AI Compute</div></div>
-      <div class="about-stat"><div class="about-stat-val">100 TOPS</div><div class="about-stat-label">Jetson Orin NX</div></div>
-      <div class="about-stat"><div class="about-stat-val">~2ms</div><div class="about-stat-label">NVIDIA Latency</div></div>
-      <div class="about-stat"><div class="about-stat-val">26 TOPS</div><div class="about-stat-label">Legacy Hailo-8</div></div>
+  <div class="walkthrough">
+
+    <!-- Step 1: Intro -->
+    <div class="step-card" id="step-1">
+      <div class="about-badge">Research Tool · By Dean Guardanapo</div>
+      <h1 class="step-title">Autonomous Delivery<br><span>Intelligence Platform</span></h1>
+      <p class="step-body">
+        Starship Technologies operates <strong>2,700+ sidewalk delivery robots</strong> across college campuses
+        and suburbs worldwide — and they're pushing toward tens of thousands.
+        <br><br>
+        The compute decisions they make now will determine whether that scale is achievable,
+        or whether cheap chips become a ceiling they can't break through.
+      </p>
+      <div class="step-stat-row">
+        <div class="about-stat"><div class="about-stat-val">2,700+</div><div class="about-stat-label">Active Robots</div></div>
+        <div class="about-stat"><div class="about-stat-val">10</div><div class="about-stat-label">Onboard Sensors</div></div>
+        <div class="about-stat"><div class="about-stat-val">26 TOPS</div><div class="about-stat-label">Current Compute</div></div>
+        <div class="about-stat"><div class="about-stat-val">100 TOPS</div><div class="about-stat-label">Jetson Orin NX</div></div>
+      </div>
     </div>
+
+    <!-- Step 2: The Problem -->
+    <div class="step-card" id="step-2" style="display:none">
+      <div class="step-label">Step 1 of 4 — The Problem</div>
+      <h2 class="step-title">Starship's Compute Bottleneck</h2>
+      <p class="step-body">
+        Each robot carries <strong>ten stereo and time-of-flight cameras, GPS, ultrasonic sensors, radar, and an IMU</strong> — all running simultaneously.
+        That's a massive amount of sensor data to process in real time on a small, battery-powered robot.
+        <br><br>
+        Their current chips — likely <strong>Hailo or Ambarella class</strong> — are cheap and power-efficient.
+        Great for cost, but limited in AI horsepower. As long as routes are predictable (college campuses, quiet suburbs), it works fine.
+      </p>
+      <div class="step-chip-compare">
+        <div class="chip-box">
+          <div class="chip-name">Hailo-8 (Current)</div>
+          <div class="chip-tops">26 TOPS</div>
+          <div class="chip-note">Fixed-function accelerator<br>Low power · Low cost<br>Single task at a time</div>
+        </div>
+        <div class="chip-arrow">→</div>
+        <div class="chip-box nvidia-chip">
+          <div class="chip-name">Jetson Orin NX</div>
+          <div class="chip-tops">100 TOPS</div>
+          <div class="chip-note">GPU + DLA + Vision engines<br>Runs all tasks in parallel<br>4× the AI horsepower</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Where It Breaks -->
+    <div class="step-card" id="step-3" style="display:none">
+      <div class="step-label">Step 2 of 4 — Where It Breaks</div>
+      <h2 class="step-title">Four Scenarios Legacy Compute Fails</h2>
+      <div class="step-break-grid">
+        <div class="break-card">
+          <div class="break-icon">🚶</div>
+          <div class="break-title">Dense Urban Environments</div>
+          <div class="break-body">Unpredictable pedestrians require tracking 20+ objects simultaneously. Hailo-8 caps at 8 before frames start dropping and the bot freezes.</div>
+        </div>
+        <div class="break-card">
+          <div class="break-icon">🌧️</div>
+          <div class="break-title">Bad Weather</div>
+          <div class="break-body">Rain and snow force heavier sensor fusion. No multi-modal fallback means a single degraded camera spikes compute unrecoverably.</div>
+        </div>
+        <div class="break-card">
+          <div class="break-icon">🗺️</div>
+          <div class="break-title">Scaling to New Cities</div>
+          <div class="break-body">Manual HD mapping takes 4–8 weeks per city. Running live SLAM + inference simultaneously saturates all 26 TOPS — one must yield.</div>
+        </div>
+        <div class="break-card">
+          <div class="break-icon">🧠</div>
+          <div class="break-title">Multi-Model AI</div>
+          <div class="break-body">Obstacle detection, route planning, and fleet coordination can't run simultaneously — tasks serialize, latency compounds, bots stall.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: NVIDIA's Answer -->
+    <div class="step-card" id="step-4" style="display:none">
+      <div class="step-label">Step 3 of 4 — The Solution</div>
+      <h2 class="step-title">What NVIDIA Jetson Orin NX Solves</h2>
+      <div class="step-solve-grid">
+        <div class="solve-item">
+          <div class="solve-dot"></div>
+          <div>
+            <div class="solve-title">100 TOPS on the Edge — No Cloud Needed</div>
+            <div class="solve-body">Enough compute to run obstacle detection, path planning, and fleet coordination in parallel on the device. No latency hit from a cloud round-trip.</div>
+          </div>
+        </div>
+        <div class="solve-item">
+          <div class="solve-dot"></div>
+          <div>
+            <div class="solve-title">Isaac Sim — New Cities in Days</div>
+            <div class="solve-body">Digitally map and train in a new city before a single robot hits the sidewalk. What takes a human survey team 6 weeks is done in days via simulation.</div>
+          </div>
+        </div>
+        <div class="solve-item">
+          <div class="solve-dot"></div>
+          <div>
+            <div class="solve-title">Cosmos World Foundation Models</div>
+            <div class="solve-body">Generate synthetic training data for edge cases — a kid on a scooter, a dog lunging, construction zones — without needing real-world exposure first.</div>
+          </div>
+        </div>
+        <div class="solve-item">
+          <div class="solve-dot"></div>
+          <div>
+            <div class="solve-title">OTA Fleet Updates</div>
+            <div class="solve-body">Every mile driven makes the whole fleet smarter. Models improve continuously — not just for robots that encountered a given scenario.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 5: Business Case -->
+    <div class="step-card" id="step-5" style="display:none">
+      <div class="step-label">Step 4 of 4 — The Business Case</div>
+      <h2 class="step-title">Cheap Compute Is a Ceiling,<br>Not a Cost Saver</h2>
+      <p class="step-body">
+        At 2,700 robots the economics of cheap chips work. Push toward <strong>tens of thousands</strong>
+        and the stall rate, manual mapping overhead, and model update bottlenecks compound
+        into something that physically prevents expansion.
+        <br><br>
+        <strong>Coco</strong> made this exact architectural switch and cut their city expansion timeline dramatically.
+        The precedent exists. For Starship, the question isn't whether to upgrade — it's when the fleet
+        size makes staying on legacy compute more expensive than switching.
+      </p>
+      <div class="step-stat-row">
+        <div class="about-stat"><div class="about-stat-val">4×</div><div class="about-stat-label">More AI Compute</div></div>
+        <div class="about-stat"><div class="about-stat-val">Days</div><div class="about-stat-label">vs. 6-Week City Launch</div></div>
+        <div class="about-stat"><div class="about-stat-val">&lt;1%</div><div class="about-stat-label">NVIDIA Stall Rate</div></div>
+        <div class="about-stat"><div class="about-stat-val">15–25%</div><div class="about-stat-label">Legacy Stall Rate</div></div>
+      </div>
+      <button class="btn-launch" onclick="switchTab('sim')" style="margin-top:36px">Launch Simulation →</button>
+    </div>
+
+    <!-- Navigation -->
+    <div class="step-nav-bar">
+      <button class="step-btn" id="prev-btn" onclick="prevStep()" style="visibility:hidden">← Back</button>
+      <div class="step-dots">
+        <span class="step-dot active" data-step="1" onclick="showStep(1)"></span>
+        <span class="step-dot" data-step="2" onclick="showStep(2)"></span>
+        <span class="step-dot" data-step="3" onclick="showStep(3)"></span>
+        <span class="step-dot" data-step="4" onclick="showStep(4)"></span>
+        <span class="step-dot" data-step="5" onclick="showStep(5)"></span>
+      </div>
+      <button class="step-btn" id="next-btn" onclick="nextStep()">Next →</button>
+    </div>
+
   </div>
 </div>
 
@@ -419,6 +626,14 @@
           </div>
         </div>
       </div>
+    </div>
+    <div class="sim-disclaimer">
+      <strong>What this simulation actually shows:</strong> Detection radii, latency values, and stall probabilities are
+      parameterized from publicly available hardware specs — Jetson Orin NX datasheet (100 TOPS), Hailo-8 benchmarks
+      (26 TOPS), and Isaac ROS latency documentation. The two bots run identical physics; the only difference is
+      their detection radius (which scales inversely with latency) and stall thresholds per scenario.
+      This is an <em>educational visualization</em> of the concept, not measured data from real robots.
+      Actual system performance varies based on model architecture, sensor configuration, and environment.
     </div>
   </div>
 </div>
@@ -665,6 +880,30 @@ function switchTab(name) {
   if (name === 'sim') initSim();
 }
 document.querySelectorAll('.nav-tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+
+// ====== WALKTHROUGH STEPS ======
+let currentStep = 1;
+const TOTAL_STEPS = 5;
+
+function showStep(n) {
+  for (let i = 1; i <= TOTAL_STEPS; i++) {
+    const el = document.getElementById('step-' + i);
+    if (el) el.style.display = i === n ? 'block' : 'none';
+  }
+  document.querySelectorAll('.step-dot').forEach(d => {
+    d.classList.toggle('active', parseInt(d.dataset.step) === n);
+  });
+  const prev = document.getElementById('prev-btn');
+  const next = document.getElementById('next-btn');
+  if (prev) prev.style.visibility = n === 1 ? 'hidden' : 'visible';
+  if (next) {
+    next.style.display = n === TOTAL_STEPS ? 'none' : '';
+  }
+  currentStep = n;
+}
+
+function nextStep() { if (currentStep < TOTAL_STEPS) showStep(currentStep + 1); }
+function prevStep() { if (currentStep > 1) showStep(currentStep - 1); }
 
 // ====== SIMULATION ======
 const canvas = document.getElementById('simCanvas');
